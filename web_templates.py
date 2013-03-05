@@ -25,6 +25,8 @@ $DIR_LIST
 $PIC_LIST
       </tbody>
     </table>
+    <h2>Tables:</h2>
+$TABLES
     <h2>Other Files:</h2>
     <ul>
 $OTHER_LIST
@@ -41,4 +43,8 @@ create_pic_list_element  = lambda  x: \
      '          <tr><td style="width: 640px;"><A href=%s><IMG src="%s" width="640" align="center" border="0"></A></td></tr>\n' +\
      '          <tr><td style="width: 640px;" height="20"></td></tr>\n'   ) % (x, x, x)
 create_file_list_element = lambda  x: '        <li><a href="%s">%s</a></li>\n' % (x, x)
-
+create_tab_list_element  = lambda  name, content: \
+    ('        <h3><a href="%s">%s</a></h3>\n' % (name,name.split('.')[0]) + \
+     '        <pre>\n' +\
+     content +\
+     '        </pre>\n')
