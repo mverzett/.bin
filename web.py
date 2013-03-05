@@ -17,15 +17,18 @@ def make_web_page(path):
     parent  = '' if path == public_html else '/'.join(path.replace(public_html,'').rstrip('/').split('/')[:-1])
     dirs    = filter(lambda x: os.path.isdir( os.path.join(path,x) ), objects)
     pics    = filter(lambda x: '.png' in x and x not in dirs, objects)
-    rest    = filter(lambda x: x not in dirs and x not in pics and x != 'index.html', objects)
+    tabs    = filter(lambda x: '.raw_txt' in x and x not in dirs and x not in pics, objects)
+    rest    = filter(lambda x: x not in dirs and x not in pics and x not in tabs and x != 'index.html', objects)
     dir_html= '\n'.join( [templates.create_main_list_element(i) for i in dirs] )
     pic_html= '\n'.join( [templates.create_pic_list_element(i)  for i in pics] )
+    tab_html= '\n'.join( [templates.create_tab_list_element(i, open(os.path.join(path,i)).read())  for i in tabs] )
     res_html= '\n'.join( [templates.create_file_list_element(i) for i in rest] )
     page    = templates.page_template.substitute(
 	PARENT     = parent,
         PATH       = path.split('public_html')[1],
         DIR_LIST   = dir_html,
         PIC_LIST   = pic_html,
+	TABLES     = tab_html,
         OTHER_LIST = res_html,
         )
     html.write(page)
