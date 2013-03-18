@@ -1,4 +1,4 @@
-export DOTBIN=$PWD
+export DOTBIN="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 #general purpose aliases
 alias la='ls -lah --color'
@@ -16,3 +16,4 @@ alias pydbg="python -i -c 'execfile(\"/afs/cern.ch/user/m/mverzett/.bin/pyDebug.
 alias sc='scram b -j 4' 
 alias serialHadd='$DOTBIN/serialHadd.sh'
 alias rootfind='$DOTBIN/rootfind.py'
+alias calc='$DOTBIN/pycalc.py'
