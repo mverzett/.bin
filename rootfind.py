@@ -19,20 +19,26 @@ def GetContent(dir):
     return retList
 
 def rootfind( directory, dirName='', **kwargs ):
-   #print kwargs
-   dirContent = GetContent(directory)
-   for entry in dirContent:
+    if 'max_depth' in kwargs and kwargs['max_depth'] == 0:
+        return
+    elif 'max_depth' in kwargs:
+        kwargs['max_depth'] -= 1
+        
+    dirContent = GetContent(directory)
+    for entry in dirContent:
       path = os.path.join(dirName,entry.GetName())
       if 'name' not in kwargs or fnmatch(path,kwargs['name']):
-         if not 'type' in kwargs or entry.InheritsFrom(kwargs['type']):
-            toeval  = 'entry.%s' % kwargs['code']
-            addenda = '%s' % eval(toeval) if ('code' in kwargs and kwargs['code']) else ''
-            print path,addenda
+          if 'type' not in kwargs or \
+              not kwargs['type'] or \
+              entry.InheritsFrom(kwargs['type']):
+              toeval  = 'entry.%s' % kwargs['code']
+              addenda = '%s' % eval(toeval) if ('code' in kwargs and kwargs['code']) else ''
+              print path,addenda
       if entry.InheritsFrom('TDirectory'):
          subdirName = os.path.join(dirName,entry.GetName())
          rootfind(entry, subdirName, **kwargs)
 
-if __name__ == '__main__':
+def parse_options(arguments=sys.argv[1:]):
    parser = OptionParser(description=__doc__)
    parser.add_option('--name', metavar='pattern', type=str, default = '*',
                      help='allows the search for a particular pattern',dest='name')
@@ -40,15 +46,21 @@ if __name__ == '__main__':
                      help='searches only for objects matching (or inheriting from) a particular class')
    parser.add_option('--exec', metavar='code'   , type=str,  dest='code', default = '',
                      help='executes a class method on each object found (beware of errors!) and returns the result together with the found object path')
-   parser.add_option('--not-ignore-errors', action='store_true', dest='dont_ignore_errors', default = False,
+   parser.add_option('--show-errors', action='store_true', dest='show_errors', default = False,
                      help='prints out root error messages when opening the file (usually a bit annoying and therefore suppressed by default)')
+   parser.add_option('--max-depth', dest='max_depth', default = -1, type=int,
+                     help='maximum depth where to search')
 
-   (options,file_names) = parser.parse_args()
-   tfiles = [ROOT.TFile.Open(name) for name in file_names if '.root' in name]
+   return parser.parse_args(args=arguments)
+   
 
-   if not options.dont_ignore_errors:
-      ROOT.gErrorIgnoreLevel = ROOT.kError+1 #Suppress anything that is not an exception
+if __name__ == '__main__':
+    (options,file_names) = parse_options()
+    tfiles = [ROOT.TFile.Open(name) for name in file_names if '.root' in name]
+    
+    if not options.show_errors:
+        ROOT.gErrorIgnoreLevel = ROOT.kError+1 #Suppress anything that is not an exception
 
-   for tfile in tfiles:
-      print "In %s:" % tfile.GetName()
-      rootfind( tfile, **vars(options))
+    for tfile in tfiles:
+        print "In %s:" % tfile.GetName()
+        rootfind( tfile, **vars(options))
