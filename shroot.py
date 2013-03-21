@@ -170,18 +170,18 @@ def ls(*args):
 
 def cd(*args):
     #raise Exception( '%s' % args.__repr__())
-    new_pwd = get_proper_path(
-        globals()['__PWD']+'/'+\
-        args[1]) #for some reason it sees it as local and local only
+    new_pwd = get_proper_path( globals()['__PWD']+'/'+args[1]) #for some reason it sees it as local and local only
     obj     = get_object(new_pwd)
     if obj and obj.InheritsFrom('TDirectory'):
         globals()['__PWD'] = new_pwd
+        del obj
         return 0
     elif obj:
         print "%s does not exist"
         return 1
     else:
         print "%s is not a direcotry!"
+        del obj
         return 1
 
 def find(*args):
@@ -222,6 +222,7 @@ __cmds = {
     'awk'     : call_shell,
     'head'    : call_shell,
     'tail'    : call_shell,
+    'grep'    : call_shell,
     }
 
 def flush(*args):
@@ -236,16 +237,16 @@ def flush(*args):
 
 def root_evaluate(*args):
     line = ' '.join(args)
-    path  = re.match('(?P<path>'__path_regex+')\.\w+\(',line).group('path')
+    path  = re.match('(?P<path>'+__path_regex+')\.\w+\(',line).group('path')
     full_path = get_proper_path(__PWD+'/'+path)
     if full_path not in __file_map:
         print "%s: no such object" % path
         return
     elif full_path not in __vars: #loads variable to keep it persistent
-        __vars[full_path] = get_object(path)
+        __vars[full_path] = __file.Get(full_path)
     obj  = __vars[full_path]
     line = line.replace(path,'obj')
-    exec(line)
+    print eval(line)
     return
   
 
@@ -284,15 +285,16 @@ def execute_command( cmd ):
     stdout         = ''
     counter        = len(parse_sequence)
     for command, args in parse_sequence:
-        counter -= 1
-        __locker.lock() #chatches stdout
-        command(*args)   #call the command
-        stdout = __locker.read()
-        if counter > 0:
-            with open(__tmp_file,'w') as f:
-                f.write(stdout)
-        else:
-            print stdout,
+        if command is not None:
+            counter -= 1
+            __locker.lock() #chatches stdout
+            command(*args)   #call the command
+            stdout = __locker.read()
+            if counter > 0:
+                with open(__tmp_file,'w') as f:
+                    f.write(stdout)
+            elif stdout != '':
+                print stdout,
     
 
 def shell():
