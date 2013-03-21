@@ -11,6 +11,10 @@ import fnmatch
 from optparse import OptionParser
 import rootfind
 import ROOT
+import shlex
+import time
+import subprocess
+ROOT.gROOT.SetBatch()
 
 class stdout_locker(object):
     def __init__(self):
@@ -31,6 +35,9 @@ class stdout_locker(object):
             self.locked = False
             return ret
 
+class CommandException(Exception):
+    def __init__(self,*args,**kwargs):
+        super(CommandException, self).__init__(*args,**kwargs)
 
 #most probably redundant
 global __main_dir 
@@ -39,19 +46,29 @@ global __file_name
 global __PWD      
 global __env_vars
 
-__main_dir = None
-__file     = None
-__file_name= None
-__PWD      = ''
-__env_vars = re.compile("\$\w+")
-__BLUE     = '\033[94m'
-__GREEN    = '\033[92m'
-__RED      = '\033[91m'
-__END_COL  = '\033[0m'
-__locker   = stdout_locker()
-__file_map = {}
+__main_dir         = None
+__file             = None
+__file_name        = None
+__PWD              = ''
+__env_vars_regex   = re.compile("\$\w+")
+__BLUE             = '\033[94m'
+__GREEN            = '\033[92m'
+__RED              = '\033[91m'
+__END_COL          = '\033[0m'
+__locker           = stdout_locker()
+__file_map         = {}
+__path_regex       = '(?:(?:\.\.|\w+)/?)+'
+__history          = []
+__max_history_len  = 500
+__def_canvas       = ROOT.TCanvas('__def_canvas','__def_canvas',800,600)
+__tmp_file         = '.session.%s' % int(time.mktime(time.gmtime()))
+__vars             = {}
 
-
+def history_append(cmd):
+    if len(__history) == 500:
+        __history.pop(0)
+    __history.append(cmd)
+    
 
 def write_file_map_entry(obj):
     color = ''
@@ -111,7 +128,7 @@ def get_object(path):
 
 def expand_vars(string):
     ret = string
-    for var in __env_vars.findall(string):
+    for var in __env_vars_regex.findall(string):
         if var.strip('$') in os.environ:
             ret = ret.replace(var,os.environ[var.strip('$')])
     return ret
@@ -152,7 +169,10 @@ def ls(*args):
     return 0
 
 def cd(*args):
-    new_pwd = get_proper_path(globals()['__PWD']+'/'+args[1]) #for some reason it sees it as local and local only
+    #raise Exception( '%s' % args.__repr__())
+    new_pwd = get_proper_path(
+        globals()['__PWD']+'/'+\
+        args[1]) #for some reason it sees it as local and local only
     obj     = get_object(new_pwd)
     if obj and obj.InheritsFrom('TDirectory'):
         globals()['__PWD'] = new_pwd
@@ -174,22 +194,105 @@ def find(*args):
     rootfind.rootfind( get_object(get_proper_path(__PWD+'/'+directory)), directory, **vars(options) )
     return 0
 
+def history(*args):
+    for i,entry in enumerate(__history):
+        print '%s    %s' % (i, entry)
+
 def sys_exit(*args):
+    if os.path.isfile(__tmp_file):
+        os.system('rm %s' % __tmp_file)
     exit()
+
+def call_shell(*args):
+    '''interfaces with the shell
+    to implement some commands'''
+    p = subprocess.Popen(list(args)+[__tmp_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE) #FIXME actually can send to stdin, but no need by now
+    out, err = p.communicate()
+    exitcode = p.wait()
+    if exitcode != 0:
+        raise Excaption(err)
+    print out
     
 __cmds = {
-    'ls'   : ls,
-    'cd'   : cd,
-    'find' : find,
-    'exit' : sys_exit,
+    'ls'      : ls,
+    'cd'      : cd,
+    'find'    : find,
+    'exit'    : sys_exit,
+    'history' : history,
+    'awk'     : call_shell,
+    'head'    : call_shell,
+    'tail'    : call_shell,
     }
 
+def flush(*args):
+    cmd = args[0]
+    if any(i in cmd for i in ['.png', '.eps', '.pdf', '.jpg', '.root', '.C']): #is a picture!
+        __def_canvas.Update()
+        __def_canvas.Print(cmd)
+    else:
+        with open(cmd,'w') as outfile:
+            with open(__tmp_file) as infile:
+                outfile.write(infile.read())
+
+def root_evaluate(*args):
+    line = ' '.join(args)
+    path  = re.match('(?P<path>'__path_regex+')\.\w+\(',line).group('path')
+    full_path = get_proper_path(__PWD+'/'+path)
+    if full_path not in __file_map:
+        print "%s: no such object" % path
+        return
+    elif full_path not in __vars: #loads variable to keep it persistent
+        __vars[full_path] = get_object(path)
+    obj  = __vars[full_path]
+    line = line.replace(path,'obj')
+    exec(line)
+    return
+  
+
+def parse_command(cmd):
+    '''finds the first character able to interrupt a command:
+    | or > return its position together with the cation to take'''
+    tokenized = shlex.split(cmd, posix=False)
+    parse_sequence = []
+    args           = []
+    command        = None
+    for token in tokenized:
+        if token == '|' or token == '>':
+            parse_sequence.append((command,args))
+            args    = []
+            command = None if token == '|' else flush
+        elif not command:
+            if token in __cmds:
+                command = __cmds[token]
+                args.append(token)
+            elif re.match(__path_regex+'\.\w+\(',token):
+                command = root_evaluate
+                args.append(token)
+            else:
+                raise CommandException("command %s does not exist" % token)
+        else:
+            args.append(token)
+    parse_sequence.append((command,args))
+    return parse_sequence
+
 def execute_command( cmd ):
-    argvs = cmd.split(' ')
-    if argvs[0] in __cmds:
-        __locker.lock()
-        __cmds[argvs[0]](*argvs)
-        print __locker.read(),
+    try:
+        parse_sequence = parse_command(cmd)
+    except CommandException as e:
+        print '%s' % e
+        return
+    stdout         = ''
+    counter        = len(parse_sequence)
+    for command, args in parse_sequence:
+        counter -= 1
+        __locker.lock() #chatches stdout
+        command(*args)   #call the command
+        stdout = __locker.read()
+        if counter > 0:
+            with open(__tmp_file,'w') as f:
+                f.write(stdout)
+        else:
+            print stdout,
     
 
 def shell():
@@ -199,6 +302,7 @@ def shell():
         cmd = cmd.strip()
         #expand env variables to their values
         cmd = expand_vars(cmd)
+        history_append(cmd)
         execute_command(cmd)
 
 if __name__ == '__main__':
