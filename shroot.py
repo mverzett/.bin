@@ -16,22 +16,28 @@ import time
 import subprocess
 ROOT.gROOT.SetBatch()
 
+__c_stdout = ".session.%s.c_stdout" % int(time.mktime(time.gmtime())) 
 class stdout_locker(object):
     def __init__(self):
+        self.c_stdout = __c_stdout
         self.locked = False
         self.backup = None
         
     def lock(self):
         if not self.locked:
-            self.backup = sys.stdout
+            self.backup = os.fdopen(os.dup(sys.stdout.fileno()), 'w')
             sys.stdout  = StringIO()
+            ROOT.gROOT.ProcessLine('freopen("%s", "w", stdout);' % self.c_stdout)
             self.locked = True
             
     def read(self):
         if self.locked:
             ret = sys.stdout.getvalue()
-            sys.stdout.close()       # close the stream 
+            sys.stdout.close()       # close the stream
+            ROOT.gROOT.ProcessLine('fclose (stdout);')
             sys.stdout = self.backup # restore original stdout
+            ret += open(self.c_stdout).read()
+            os.system("rm %s" % self.c_stdout)
             self.locked = False
             return ret
 
@@ -201,6 +207,8 @@ def history(*args):
 def sys_exit(*args):
     if os.path.isfile(__tmp_file):
         os.system('rm %s' % __tmp_file)
+    if os.path.isfile(__c_stdout):
+        os.system('rm %s' % __c_stdout)
     exit()
 
 def call_shell(*args):
@@ -210,7 +218,8 @@ def call_shell(*args):
     out, err = p.communicate()
     exitcode = p.wait()
     if exitcode != 0:
-        raise Excaption(err)
+        print err
+    ##     raise Exception(err)
     print out
     
 __cmds = {
@@ -294,6 +303,7 @@ def execute_command( cmd ):
                 with open(__tmp_file,'w') as f:
                     f.write(stdout)
             elif stdout != '':
+                print 'stdout'
                 print stdout,
     
 
