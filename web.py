@@ -11,7 +11,7 @@ __doc__ = """Script to update the web-page to show pictures and dirs in a reason
 
 public_html = '/afs/hep.wisc.edu/home/%s/public_html/' % os.environ['USER']
 def make_web_page(path):
-    print 'building web page for path: ' + path
+    #print 'building web page for path: ' + path
     objects = os.listdir(path)
     html    = open( os.path.join(path,'index.html'), 'w' )
     parent  = '' if path == public_html else '/'.join(path.replace(public_html,'').rstrip('/').split('/')[:-1])

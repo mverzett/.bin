@@ -16,16 +16,17 @@ import time
 import subprocess
 ROOT.gROOT.SetBatch()
 
-__c_stdout = ".session.%s.c_stdout" % int(time.mktime(time.gmtime())) 
+sys.stdout = os.fdopen(os.dup(sys.stdout.fileno()), 'w')
+c_stdout = ".session.%s.c_stdout" % int(time.mktime(time.gmtime())) 
 class stdout_locker(object):
     def __init__(self):
-        self.c_stdout = __c_stdout
+        self.c_stdout = c_stdout
         self.locked = False
         self.backup = None
         
     def lock(self):
         if not self.locked:
-            self.backup = os.fdopen(os.dup(sys.stdout.fileno()), 'w')
+            self.backup = sys.stdout 
             sys.stdout  = StringIO()
             ROOT.gROOT.ProcessLine('freopen("%s", "w", stdout);' % self.c_stdout)
             self.locked = True
@@ -207,8 +208,8 @@ def history(*args):
 def sys_exit(*args):
     if os.path.isfile(__tmp_file):
         os.system('rm %s' % __tmp_file)
-    if os.path.isfile(__c_stdout):
-        os.system('rm %s' % __c_stdout)
+    if os.path.isfile(c_stdout):
+        os.system('rm %s' % c_stdout)
     exit()
 
 def call_shell(*args):
@@ -296,15 +297,14 @@ def execute_command( cmd ):
     for command, args in parse_sequence:
         if command is not None:
             counter -= 1
-            __locker.lock() #chatches stdout
+            #__locker.lock() #chatches stdout
             command(*args)   #call the command
-            stdout = __locker.read()
-            if counter > 0:
-                with open(__tmp_file,'w') as f:
-                    f.write(stdout)
-            elif stdout != '':
-                print 'stdout'
-                print stdout,
+            #stdout = __locker.read()
+            #if counter > 0:
+            #    with open(__tmp_file,'w') as f:
+            #        f.write(stdout)
+            #elif stdout != '':
+            #    print stdout,
     
 
 def shell():
@@ -321,5 +321,6 @@ if __name__ == '__main__':
     __file_name= sys.argv[-1]
     __file     = ROOT.TFile.Open(__file_name)
     MapDirStructure(__file,'') #Initialize file map
+    print __file_map
     shell()
     
