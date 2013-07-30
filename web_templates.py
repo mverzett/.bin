@@ -38,10 +38,19 @@ $OTHER_LIST
 path_to_link = lambda path : path.replace(os.environ['HOME']+'/public_html/', 'http://www.hep.wisc.edu/~mverzett/')
 
 create_main_list_element = lambda  x: '        <li><a href="%s/">%s</a></li>\n' % (x, x)
-create_pic_list_element  = lambda  x: \
-    ('          <tr><td style="width: 640px;">%s</td></tr>\n' + \
-     '          <tr><td style="width: 640px;"><A href=%s><IMG src="%s" width="640" align="center" border="0"></A></td></tr>\n' +\
-     '          <tr><td style="width: 640px;" height="20"></td></tr>\n'   ) % (x, x, x)
+def create_pic_list_element(*args, **kwargs):
+    size = str(kwargs['size']) if 'size' in kwargs else '640'
+    wraps      = '          <tr>%s</tr>\n'
+    first_line = ( ('<td style="width: '+size+'px;">%s</td>')*len(args) ) % args
+    first_line = wraps % first_line
+
+    second_line = ''.join([('<td style="width: '+size+'px;"><A href=%s><IMG src="%s" width="'+size+'" align="center" border="0"></A></td>') % ( arg, arg ) for arg in args])
+    second_line = wraps % second_line
+
+    third_line = ('<td style="width: '+size+'px;" height="20"></td>')*len(args)
+    third_line = wraps % third_line
+    return ''.join([first_line, second_line, third_line])
+
 create_file_list_element = lambda  x: '        <li><a href="%s">%s</a></li>\n' % (x, x)
 create_tab_list_element  = lambda  name, content: \
     ('        <h3><a href="%s">%s</a></h3>\n' % (name,name.split('.')[0]) + \
