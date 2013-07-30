@@ -29,10 +29,13 @@ def rootfind( directory, dirName='', **kwargs ):
       path = os.path.join(dirName,entry.GetName())
       if 'name' not in kwargs or fnmatch(path,kwargs['name']):
           if 'type' not in kwargs or \
-              not kwargs['type'] or \
-              entry.InheritsFrom(kwargs['type']):
-              toeval  = 'entry.%s' % kwargs['code']
-              addenda = '%s' % eval(toeval) if ('code' in kwargs and kwargs['code']) else ''
+             not kwargs['type'] or \
+             entry.InheritsFrom(kwargs['type']):
+              addenda = ''
+              if 'code' in kwargs and kwargs['code']:
+                  for code in  kwargs['code'].split('$'):
+                      toeval  = 'entry.%s' % code
+                      addenda += '%s ' % eval(toeval)
               print path,addenda
       if entry.InheritsFrom('TDirectory'):
          subdirName = os.path.join(dirName,entry.GetName())
