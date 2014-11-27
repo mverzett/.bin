@@ -42,7 +42,7 @@ def rootfind( directory, dirName='', **kwargs ):
                       toeval  = 'entry.%s' % code
                       addenda += '%s ' % eval(toeval)
               print path,addenda
-      if inherits_from(obj_type, getattr(ROOT, kwargs['type'])):
+      if inherits_from(obj_type, ROOT.TDirectory):
          subdirName = os.path.join(dirName,obj_name)
          entry= directory.Get(obj_name)
          rootfind(entry, subdirName, **kwargs)
