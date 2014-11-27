@@ -321,6 +321,6 @@ if __name__ == '__main__':
     __file_name= sys.argv[-1]
     __file     = ROOT.TFile.Open(__file_name)
     MapDirStructure(__file,'') #Initialize file map
-    print __file_map
+    #print __file_map
     shell()
     
