@@ -14,7 +14,7 @@ Usage: rootfind file.root [options]"""
 def GetContent(dir):
     'does not read key content'
     keys = dir.GetListOfKeys()
-    return [(getattr(ROOT, i.GetClassName()), i.GetName()) for i in keys]
+    return [(getattr(ROOT, i.GetClassName()), i.GetName(), i.GetTitle() if hasattr(i, 'GetTitle') else '') for i in keys]
 
 def inherits_from(test, target):
     if test == target:
@@ -29,7 +29,7 @@ def rootfind( directory, dirName='', **kwargs ):
         kwargs['max_depth'] -= 1
         
     dirContent = GetContent(directory)
-    for obj_type, obj_name in dirContent:
+    for obj_type, obj_name, _ in dirContent:
       path = os.path.join(dirName,obj_name)
       if 'name' not in kwargs or fnmatch(path,kwargs['name']):
           if 'type' not in kwargs or \

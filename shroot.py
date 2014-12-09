@@ -77,28 +77,29 @@ def history_append(cmd):
     __history.append(cmd)
     
 
-def write_file_map_entry(obj):
+def write_file_map_entry(name, title, obj_type):
     color = ''
-    if obj.InheritsFrom('TH1'):
+    if rootfind.inherits_from(obj_type, ROOT.TH1):
         color = __RED
-    elif obj.InheritsFrom('TTree'):
+    elif rootfind.inherits_from(obj_type, ROOT.TTree):
         color = __GREEN
-    elif obj.InheritsFrom('TDirectory'):
+    elif rootfind.inherits_from(obj_type, ROOT.TDirectory):
         color = __BLUE
 
     return {
-        'name' : obj.GetName(),
+        'name' : name,
         'color': color,
-        'cname': obj.ClassName(),
-        'title': obj.GetTitle(),
+        'cname': str(obj_type).replace("<class '",'').replace("'>",''),
+        'title': title,
         }
 
 def MapDirStructure( directory, dirName ):
     dirContent = rootfind.GetContent(directory)
-    for entry in dirContent:
-        pathname = os.path.join(dirName,entry.GetName())
-        __file_map[pathname] = write_file_map_entry(entry)
-        if entry.InheritsFrom('TDirectory'):
+    for obj_type, name, title in dirContent:
+        pathname = os.path.join(dirName, name)
+        __file_map[pathname] = write_file_map_entry(name, title, obj_type)
+        if rootfind.inherits_from(obj_type, ROOT.TDirectory):
+            entry= directory.Get(name)
             MapDirStructure(entry, pathname)
 
 def get_proper_path(path):
