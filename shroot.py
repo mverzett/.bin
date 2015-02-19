@@ -257,6 +257,7 @@ def root_evaluate(*args):
         __vars[full_path] = __file.Get(full_path)
     obj  = __vars[full_path]
     line = line.replace(path,'obj')
+    #FIXME: should catch exceptions instead of exiting!
     print eval(line)
     return
   
