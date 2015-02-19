@@ -1,5 +1,6 @@
 import os
 from string import Template
+import host
 
 page_template = Template('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html>
@@ -8,7 +9,7 @@ page_template = Template('''<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transit
 </head>
 <body class="index">
   <div id="header">
-    <A href="http://www.hep.wisc.edu/~mverzett/">Home</A>  <A href="http://www.hep.wisc.edu/~mverzett/$PARENT">Parent Dir</A>
+    <A href="$HOME/">Home</A>  <A href="$HOME/$PARENT">Parent Dir</A>
   </div>
   <hr>
   <div id="title">
@@ -35,7 +36,7 @@ $OTHER_LIST
 </html>
 ''')
 
-path_to_link = lambda path : path.replace(os.environ['HOME']+'/public_html/', 'http://www.hep.wisc.edu/~mverzett/')
+path_to_link = lambda path : path.replace(host.public_html, '/'.join([host.web_home,'']))
 
 create_main_list_element = lambda  x: '        <li><a href="%s/">%s</a></li>\n' % (x, x)
 def create_pic_list_element(*args, **kwargs):

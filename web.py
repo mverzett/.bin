@@ -5,6 +5,7 @@ import glob
 import sys
 import re
 import web_templates as templates
+import host
 
 __author__  = "Mauro Verzetti (mauro.verzetti@cern.ch)"
 __doc__ = """Script to update the web-page to show pictures and dirs in a reasonable way"""
@@ -19,12 +20,11 @@ parser.add_option('--picsize', '-s', type=int, default = 640,
 options, dirs_to_map = parser.parse_args()
 chunk_list = lambda l,n: [l[i:i+n] for i in range(0, len(l), n)]
 
-public_html = '/afs/hep.wisc.edu/home/%s/public_html/' % os.environ['USER']
 def make_web_page(path):
     #print 'building web page for path: ' + path
     objects = os.listdir(path)
     html    = open( os.path.join(path,'index.html'), 'w' )
-    parent  = '' if path == public_html else '/'.join(path.replace(public_html,'').rstrip('/').split('/')[:-1])
+    parent  = '' if path == host.public_html else '/'.join(path.replace(host.public_html,'').rstrip('/').split('/')[:-1])
     dirs    = filter(lambda x: os.path.isdir( os.path.join(path,x) ), objects)
     pics    = filter(lambda x: '.png' in x and x not in dirs, objects)
     pics    = chunk_list(pics, options.columns)
@@ -35,11 +35,12 @@ def make_web_page(path):
     tab_html= '\n'.join( [templates.create_tab_list_element(i, open(os.path.join(path,i)).read())  for i in tabs] )
     res_html= '\n'.join( [templates.create_file_list_element(i) for i in rest] )
     page    = templates.page_template.substitute(
-	PARENT     = parent,
-        PATH       = path.split('public_html')[1],
+        HOME       = host.web_home,
+        PARENT     = parent,
+        PATH       = path.split(host.root_dir)[1],
         DIR_LIST   = dir_html,
         PIC_LIST   = pic_html,
-	TABLES     = tab_html,
+        TABLES     = tab_html,
         OTHER_LIST = res_html,
         )
     html.write(page)
@@ -50,4 +51,4 @@ if len(dirs_to_map):
     for i in dirs_to_map:
         make_web_page(i)
 else:
-    make_web_page(public_html)
+    make_web_page(host.public_html)
