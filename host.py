@@ -14,6 +14,10 @@ elif 'cern.ch' in host:
     public_html = '/afs/cern.ch/user/%s/%s/www/' % (initial, os.environ['USER'])
     root_dir = 'www'
     web_home = 'https://mverzett.web.cern.ch/mverzett'
+elif 'fnal.gov' in host:
+    public_html = os.path.join(os.environ['HOME'],'public_html')
+    root_dir = 'public_html'
+    web_home = 'http://home.fnal.gov/~%s' % os.environ['USER']
 else:
     raise ValueError("Site %s not recongnised!" % host)
 
