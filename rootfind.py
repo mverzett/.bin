@@ -59,12 +59,22 @@ def parse_options(arguments=sys.argv[1:]):
                      help='prints out root error messages when opening the file (usually a bit annoying and therefore suppressed by default)')
    parser.add_option('--max-depth', dest='max_depth', default = -1, type=int,
                      help='maximum depth where to search')
+   parser.add_option('--title', action='store_true',
+                     help='shortcut to --exec="GetTitle()"')
+   parser.add_option('--class', action='store_true',
+                     help='shortcut to --exec="ClassName()"')
 
    return parser.parse_args(args=arguments)
    
 
 if __name__ == '__main__':
     (options,file_names) = parse_options()
+    if options.title:
+        options.code = 'GetTitle()'
+
+    #if options.class:
+    #    options.code = 'ClassName()'
+        
     tfile_names = [name for name in file_names if '.root' in name]
     
     if not options.show_errors:
