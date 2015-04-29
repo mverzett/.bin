@@ -6,6 +6,7 @@ import sys
 import re
 import web_templates as templates
 import host
+from pdb import set_trace
 
 __author__  = "Mauro Verzetti (mauro.verzetti@cern.ch)"
 __doc__ = """Script to update the web-page to show pictures and dirs in a reasonable way"""
@@ -23,6 +24,8 @@ chunk_list = lambda l,n: [l[i:i+n] for i in range(0, len(l), n)]
 def make_web_page(path):
     #print 'building web page for path: ' + path
     objects = os.listdir(path)
+    if '.donotupdate' in objects:
+        return
     html    = open( os.path.join(path,'index.html'), 'w' )
     parent  = '' if path == host.public_html else '/'.join(path.replace(host.public_html,'').rstrip('/').split('/')[:-1])
     dirs    = filter(lambda x: os.path.isdir( os.path.join(path,x) ), objects)
