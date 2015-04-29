@@ -32,7 +32,7 @@ def prettyfloat(value, lenght):
 
 def h1d_to_txt(histo, options):
     xbins = histo.GetNbinsX()
-    size  = 9
+    size  = 9 if not options.compact else 5
     centers = ['uflow'.center(size)]
     vals    = [prettyfloat(histo.GetBinContent(0), size)]
     errs    = [prettyfloat(histo.GetBinError(0), size)]
@@ -41,6 +41,9 @@ def h1d_to_txt(histo, options):
         if options.binrange:
             centers.append( prettyfloat( histo.GetXaxis().GetBinLowEdge(i), size/2) + '-' + \
                             prettyfloat( histo.GetXaxis().GetBinLowEdge(i) + histo.GetXaxis().GetBinWidth(i), size/2) )
+        elif options.labels:
+            label = histo.GetXaxis().GetBinLabel(i)[:size]
+            centers.append( label.center(size) )
         else:
             centers.append( prettyfloat( histo.GetXaxis().GetBinCenter(i), size) )
         vals.append( prettyfloat( histo.GetBinContent(i), size) )
@@ -107,11 +110,15 @@ parser.add_option('--show-errors', '-s', action='store_true', default = False,
                   help='show the statistical error', dest='stat')
 parser.add_option('--bin-range', action='store_true', default = False,
                   help='', dest='binrange')
+parser.add_option('--compact', action='store_true', default = False,
+                  help='', dest='compact')
 parser.add_option('--rebin', default = '', type=str,
                   help='rebins the histogram', dest='rebin')
 parser.add_option('--project', default = '', type=str,
-                  help='rebins the histogram', dest='project')
-
+                  help='rebins the histogram', dest='project'
+)
+parser.add_option('--use-labels', dest='labels', action='store_true', default = False,
+                  help='uses labels instead of bin center')
 options, args = parser.parse_args()
 
 import ROOT
