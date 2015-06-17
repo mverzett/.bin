@@ -46,6 +46,14 @@ class CommandException(Exception):
     def __init__(self,*args,**kwargs):
         super(CommandException, self).__init__(*args,**kwargs)
 
+class CachedFile(object):
+    def __init__(self, tfile):
+        self._file_ = tfile
+        self._cache_ = {}
+
+    def __getitem__(self, path):
+        pass
+
 #most probably redundant
 global __main_dir 
 global __file     
