@@ -17,7 +17,7 @@ alias pydbg="python -i -c 'execfile(\"/afs/cern.ch/user/m/mverzett/.bin/pyDebug.
 alias sc='scram b -j 4' 
 alias serialHadd='$DOTBIN/hierarchicalHadd.py'
 alias rootfind='$DOTBIN/rootfind.py'
-alias calc='$DOTBIN/pycalc.py'
+alias calc='$DOTBIN/pycalc.sh'
 alias shroot='$DOTBIN/shroot.py'
 
 #git aliases
