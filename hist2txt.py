@@ -6,28 +6,31 @@ import sys
 import time
 from pdb import set_trace
 from optparse import OptionParser
+import math
+
+inf = float('inf')
+nan = float('nan')
 
 def odg(num):
-    num = abs(num)
-    #print num
     if num == 0.:
-        return 0
-    if num < 10 and num >=1:
-        return 0
-    else:
-        if num > 1:
-            return 1+odg(num/10.)
-        else:
-            return -1+odg(num*10.)
+        return 0.
+    return int(
+        math.log10(
+            abs(num)
+            )
+        )
 
 def prettyfloat(value, lenght):
-    odm = odg(value)
-    accuracy = '0' if odm > 1 else \
-               '1' if odm > -1 else \
-               str(1-odm)
-    ret = (('%.'+accuracy+'f') % value ).center(lenght)
-    if len(ret) > lenght:
-        ret = ('%.1e' % value ).center(lenght)
+    if value == inf or math.isnan(value):
+        ret = value.__repr__().center(lenght)
+    else:     
+        odm = odg(value)
+        accuracy = '0' if odm > 1 else \
+           '1' if odm > -1 else \
+           str(1-odm)
+        ret = (('%.'+accuracy+'f') % value ).center(lenght)
+        if len(ret) > lenght:
+            ret = ('%.1e' % value ).center(lenght)
     return ret
 
 def h1d_to_txt(histo, options):
