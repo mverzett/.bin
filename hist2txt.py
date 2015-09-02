@@ -36,11 +36,15 @@ def prettyfloat(value, lenght):
 def h1d_to_txt(histo, options):
     xbins = histo.GetNbinsX()
     size  = 9 if not options.compact else 5
-    centers = ['uflow'.center(size)]
-    vals    = [prettyfloat(histo.GetBinContent(0), size)]
-    errs    = [prettyfloat(histo.GetBinError(0), size)]
+    centers = ['uflow'.center(size)] if not options.range else []
+    vals    = [prettyfloat(histo.GetBinContent(0), size)] if not options.range else []
+    errs    = [prettyfloat(histo.GetBinError(0), size)] if not options.range else []
+    x_range = eval(options.range) if options.range else None
 
     for i in xrange( 1, xbins+1 ):
+        if x_range is not None:
+            if not (x_range[0] <= histo.GetXaxis().GetBinCenter(i) <= x_range[1]):
+                continue
         if options.binrange:
             centers.append( prettyfloat( histo.GetXaxis().GetBinLowEdge(i), size/2) + '-' + \
                             prettyfloat( histo.GetXaxis().GetBinLowEdge(i) + histo.GetXaxis().GetBinWidth(i), size/2) )
@@ -52,9 +56,10 @@ def h1d_to_txt(histo, options):
         vals.append( prettyfloat( histo.GetBinContent(i), size) )
         errs.append( prettyfloat( histo.GetBinError(i), size) )
 
-    centers.append( 'oflow'.center(size) )
-    vals.append( prettyfloat( histo.GetBinContent(xbins+1), size) )
-    errs.append( prettyfloat( histo.GetBinError(xbins+1), size) )
+    if x_range is None:
+        centers.append( 'oflow'.center(size) )
+        vals.append( prettyfloat( histo.GetBinContent(xbins+1), size) )
+        errs.append( prettyfloat( histo.GetBinError(xbins+1), size) )
 
     firstline = '|'.join(vals)
     print firstline
@@ -122,6 +127,8 @@ parser.add_option('--project', default = '', type=str,
 )
 parser.add_option('--use-labels', dest='labels', action='store_true', default = False,
                   help='uses labels instead of bin center')
+parser.add_option('--range', dest='range', type=str, default = '',
+                  help='set printing range')
 options, args = parser.parse_args()
 
 import ROOT
