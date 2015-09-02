@@ -19,6 +19,7 @@ alias serialHadd='$DOTBIN/hierarchicalHadd.py'
 alias rootfind='$DOTBIN/rootfind.py'
 alias calc='$DOTBIN/pycalc.sh'
 alias shroot='$DOTBIN/shroot.py'
+alias dump_branch_names='$DOTBIN/dump_branch_names.py'
 
 #git aliases
 alias git_ci='git commit -m'
