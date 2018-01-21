@@ -16,4 +16,6 @@ popd
 
 pip install -e rootpy
 
+cp $DOTBIN/.rootpy_env_setup.sh env.sh
+
 popd
