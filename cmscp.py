@@ -22,6 +22,9 @@ process.source = cms.Source("PoolSource",
 		)
 )
 
+process.load('FWCore.MessageService.MessageLogger_cfi')
+process.MessageLogger.cerr.FwkReport.reportEvery = 1
+
 process.source.skipEvents = cms.untracked.uint32(options.skip)
 if options.pick:
 	process.source.eventsToProcess = cms.untracked.VEventRange(options.pick)
@@ -33,3 +36,4 @@ process.out = cms.OutputModule(
 	fileName = cms.untracked.string(options.outputFile)
 	)
 process.end = cms.EndPath(process.out)
+
