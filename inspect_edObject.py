@@ -11,8 +11,7 @@ from argparse import ArgumentParser
 
 parser = ArgumentParser(description=__doc__)
 parser.add_argument('file', help='file path')
-parser.add_argument('handle', help='type of handle to be used')
-parser.add_argument('label', help='label of collection to be inspected')
+parser.add_argument('info', nargs='+', help='what to dump, in the form "handle|label(|simplename)", multiple objets supported')
 parser.add_argument('--pick', help='which single event to pick')
 parser.add_argument('--inrun', action='store_true', help='get collection from the Run and not Event')
 args = parser.parse_args()
@@ -33,24 +32,38 @@ if fname.startswith('/store/'):
 
 events = Runs(fname) if args.inrun else Events(fname)
 iterator = events.__iter__()
-handle = Handle(args.handle)
+handles = {}
+handle_names = {}
+labels = {}
+for info in args.info:
+   splitted = info.split('|')
+   if len(splitted) == 2:
+      name = splitted[1]
+   elif len(splitted) == 3:
+      name = splitted[2]
+   else:
+      raise ValueError('The info %s is not properly formatted' % info)
+   handles[name] = Handle(splitted[0])
+   labels[name]  = splitted[1]
+   handle_names[name] = splitted[0]
+   
 keep_going = True
 loop = 0
 
 while keep_going:
    evt = iterator.next()
    loop += 1
-   get_result = evt.getByLabel(args.label, handle)
-   obj = handle.product()
    if pick:
       evtid = (evt.eventAuxiliary().run(), evt.eventAuxiliary().luminosityBlock(), evt.eventAuxiliary().event())
       if evtid == pick:
          keep_going = False
    else:
-      print 'loop %d' % loop
-      keep_going = not get_result
-      if 'vector' in args.handle:
-         keep_going = obj.size() == 0
+      get_result = all(evt.getByLabel(labels[i], handles[i]) for i in handles)      
+      print('loop %d' % loop)
+      if not get_result: continue
+      objs = {i : j.product() for i, j in handles.iteritems()}
+      has_objs = all(objs[i].size() != 0 for i, j in handle_names.iteritems() if 'vector' in j)
+      keep_going = not has_objs
 
 print "object/collection successfully loaded into obj, entering debugging mode"
 set_trace()
